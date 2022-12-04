@@ -63,7 +63,7 @@ UART_HandleTypeDef huart1;
 osThreadId buttonTaskHandle;
 osThreadId transmitTaskHandle;
 osThreadId readTaskHandle;
-osThreadId killTaskHandle;
+osThreadId musicTaskHandle;
 /* USER CODE BEGIN PV */
 #define buffer_size	1000
 int32_t pre_Buffer[buffer_size];
@@ -84,7 +84,7 @@ uint32_t i;
 uint32_t j;
 //uint32_t data_index = 0;
 uint32_t puttonPushed = 0;
-//uint32_t killCounter = 0;
+//uint32_t musicCounter = 0;
 uint32_t resetCounter = 0;
 uint32_t blank_count = 0;
 HAL_StatusTypeDef UART_status;
@@ -136,7 +136,7 @@ static void MX_OCTOSPI1_Init(void);
 void StartButtonTask(void const * argument);
 void StartTransmitTask(void const * argument);
 void StartReadTask(void const * argument);
-void StartKillTask(void const * argument);
+void StartMusicTask(void const * argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -336,9 +336,9 @@ int main(void)
   osThreadDef(readTask, StartReadTask, osPriorityNormal, 0, 128);
   readTaskHandle = osThreadCreate(osThread(readTask), NULL);
 
-  /* definition and creation of killTask */
-  osThreadDef(killTask, StartKillTask, osPriorityNormal, 0, 128);
-  killTaskHandle = osThreadCreate(osThread(killTask), NULL);
+  /* definition and creation of musicTask */
+  osThreadDef(musicTask, StartMusicTask, osPriorityNormal, 0, 128);
+  musicTaskHandle = osThreadCreate(osThread(musicTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -837,85 +837,6 @@ void StartTransmitTask(void const * argument)
     while(resetCounter ==0){
     //do nothing until the button is pressed
     }
-    if(start_recording==0){
-        HAL_DFSDM_FilterRegularStart_DMA(&hdfsdm1_filter0, pre_Buffer, buffer_size);
-        HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-        start_recording=1;
-        sum = 0;
-        }
-    	  if (first_half_done == 1){
-    		  for(i = 0; i<buffer_size/2; i++){
-    			  aft_Buffer[i] = pre_Buffer[i]>>20;
-    			  if (aft_Buffer[i]>buffmax){
-    				  buffmax = aft_Buffer[i];
-    			  }
-    			  if (aft_Buffer[i]<buffmin){
-    				  buffmin = aft_Buffer[i];
-    			  }
-    			  if(aft_Buffer[i]<0){
-    				  sum -= aft_Buffer[i];
-    			  }
-    			  else{
-    				  sum += aft_Buffer[i];
-    			  }
-    		  }
-    		  first_half_done = 0;
-    	  }
-    	  if (second_half_done == 1){
-    		  for(i = buffer_size/2; i<buffer_size; i++){
-    			  aft_Buffer[i] = pre_Buffer[i]>>20;
-    			  if (aft_Buffer[i]>buffmax){
-    				  buffmax = aft_Buffer[i];
-    			  }
-    			  if (aft_Buffer[i]<buffmin){
-    				  buffmin = aft_Buffer[i];
-    			  }
-    			  if(aft_Buffer[i]<0){
-    				  sum -= aft_Buffer[i];
-    			  }
-    			  else{
-    				  sum += aft_Buffer[i];
-    			  }
-    		  }
-    		  mean = sum/buffer_size;
-    		  second_half_done = 0;
-    		  HAL_DFSDM_FilterRegularStop_DMA(&hdfsdm1_filter0);
-    		  HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-    		  start_recording=0;
-    	  }
-    	  if(mean<10){
-    			  volume_height = 0;
-    		  }
-    		  else if(mean<25){
-    			  volume_height = 1;
-    		  }
-    		  else if(mean<50){
-    			  volume_height = 2;
-    		  }
-    		  else if(mean<75){
-    			  volume_height = 3;
-    		  }
-    		  else if(mean<100){
-    			  volume_height = 4;
-    		  }
-    		  else if(mean<125){
-    			  volume_height = 5;
-    		  }
-    		  else if(mean<150){
-    			  volume_height = 6;
-    		  }
-    		  else if(mean<175){
-    			  volume_height = 7;
-    		  }
-    		  else if(mean<200){
-    			  volume_height = 8;
-    		  }
-    		  else if(mean<225){
-    			  volume_height = 9;
-    		  }
-    		  else{
-    			  volume_height = 9;
-    		  }
     //for each row, copy the last row's content
     for(uint16_t copyIndex =0;copyIndex<20;copyIndex++){
     row10[copyIndex] = row9[copyIndex];
@@ -995,100 +916,100 @@ void StartReadTask(void const * argument)
     while(resetCounter ==0){
     //do nothing until the button is pressed
     }
-//    if(start_recording==0){
-//    HAL_DFSDM_FilterRegularStart_DMA(&hdfsdm1_filter0, pre_Buffer, buffer_size);
-//    HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-//    start_recording=1;
-//    sum = 0;
-//    }
-//	  if (first_half_done == 1){
-//		  for(i = 0; i<buffer_size/2; i++){
-//			  aft_Buffer[i] = pre_Buffer[i]>>20;
-//			  if (aft_Buffer[i]>buffmax){
-//				  buffmax = aft_Buffer[i];
-//			  }
-//			  if (aft_Buffer[i]<buffmin){
-//				  buffmin = aft_Buffer[i];
-//			  }
-//			  if(aft_Buffer[i]<0){
-//				  sum -= aft_Buffer[i];
-//			  }
-//			  else{
-//				  sum += aft_Buffer[i];
-//			  }
-//		  }
-//		  first_half_done = 0;
-//	  }
-//	  if (second_half_done == 1){
-//		  for(i = buffer_size/2; i<buffer_size; i++){
-//			  aft_Buffer[i] = pre_Buffer[i]>>20;
-//			  if (aft_Buffer[i]>buffmax){
-//				  buffmax = aft_Buffer[i];
-//			  }
-//			  if (aft_Buffer[i]<buffmin){
-//				  buffmin = aft_Buffer[i];
-//			  }
-//			  if(aft_Buffer[i]<0){
-//				  sum -= aft_Buffer[i];
-//			  }
-//			  else{
-//				  sum += aft_Buffer[i];
-//			  }
-//		  }
-//		  mean = sum/buffer_size;
-//		  second_half_done = 0;
-//		  HAL_DFSDM_FilterRegularStop_DMA(&hdfsdm1_filter0);
-//		  HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-//		  start_recording=0;
-//	  }
-//	  if(mean<10){
-//			  volume_height = 0;
-//		  }
-//		  else if(mean<25){
-//			  volume_height = 1;
-//		  }
-//		  else if(mean<50){
-//			  volume_height = 2;
-//		  }
-//		  else if(mean<75){
-//			  volume_height = 3;
-//		  }
-//		  else if(mean<100){
-//			  volume_height = 4;
-//		  }
-//		  else if(mean<125){
-//			  volume_height = 5;
-//		  }
-//		  else if(mean<150){
-//			  volume_height = 6;
-//		  }
-//		  else if(mean<175){
-//			  volume_height = 7;
-//		  }
-//		  else if(mean<200){
-//			  volume_height = 8;
-//		  }
-//		  else if(mean<225){
-//			  volume_height = 9;
-//		  }
-//		  else{
-//			  volume_height = 9;
-//		  }
+    if(start_recording==0){
+    HAL_DFSDM_FilterRegularStart_DMA(&hdfsdm1_filter0, pre_Buffer, buffer_size);
+    HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+    start_recording=1;
+    sum = 0;
+    }
+	  if (first_half_done == 1){
+		  for(i = 0; i<buffer_size/2; i++){
+			  aft_Buffer[i] = pre_Buffer[i]>>20;
+			  if (aft_Buffer[i]>buffmax){
+				  buffmax = aft_Buffer[i];
+			  }
+			  if (aft_Buffer[i]<buffmin){
+				  buffmin = aft_Buffer[i];
+			  }
+			  if(aft_Buffer[i]<0){
+				  sum -= aft_Buffer[i];
+			  }
+			  else{
+				  sum += aft_Buffer[i];
+			  }
+		  }
+		  first_half_done = 0;
+	  }
+	  if (second_half_done == 1){
+		  for(i = buffer_size/2; i<buffer_size; i++){
+			  aft_Buffer[i] = pre_Buffer[i]>>20;
+			  if (aft_Buffer[i]>buffmax){
+				  buffmax = aft_Buffer[i];
+			  }
+			  if (aft_Buffer[i]<buffmin){
+				  buffmin = aft_Buffer[i];
+			  }
+			  if(aft_Buffer[i]<0){
+				  sum -= aft_Buffer[i];
+			  }
+			  else{
+				  sum += aft_Buffer[i];
+			  }
+		  }
+		  mean = sum/buffer_size;
+		  second_half_done = 0;
+		  HAL_DFSDM_FilterRegularStop_DMA(&hdfsdm1_filter0);
+		  HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+		  start_recording=0;
+	  }
+	  if(mean<10){
+			  volume_height = 0;
+		  }
+		  else if(mean<25){
+			  volume_height = 1;
+		  }
+		  else if(mean<50){
+			  volume_height = 2;
+		  }
+		  else if(mean<75){
+			  volume_height = 3;
+		  }
+		  else if(mean<100){
+			  volume_height = 4;
+		  }
+		  else if(mean<125){
+			  volume_height = 5;
+		  }
+		  else if(mean<150){
+			  volume_height = 6;
+		  }
+		  else if(mean<175){
+			  volume_height = 7;
+		  }
+		  else if(mean<200){
+			  volume_height = 8;
+		  }
+		  else if(mean<225){
+			  volume_height = 9;
+		  }
+		  else{
+			  volume_height = 9;
+		  }
 
   }
   /* USER CODE END StartReadTask */
 }
 
-/* USER CODE BEGIN Header_StartKillTask */
+/* USER CODE BEGIN Header_StartMusicTask */
 /**
-* @brief Function implementing the killTask thread.
+* @brief Function implementing the musicTask thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_StartKillTask */
-void StartKillTask(void const * argument)
+/* USER CODE END Header_StartMusicTask */
+void StartMusicTask(void const * argument)
 {
-  /* USER CODE BEGIN StartKillTask */
+  /* USER CODE BEGIN StartMusicTask */
   /* Infinite loop */
   for(;;)
   {
@@ -1197,7 +1118,7 @@ void StartKillTask(void const * argument)
     		}
       }
   }
-  /* USER CODE END StartKillTask */
+  /* USER CODE END StartMusicTask */
 }
 
 /**
